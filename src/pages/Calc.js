@@ -18,8 +18,8 @@ const Peptides = styled.div`
   display: flex;
 `;
 
-const Peptide = ({ peptide }) => (
-  <PeptideContainer>
+const Peptide = ({ peptide, onClick }) => (
+  <PeptideContainer onClick={onClick}>
     <strong>{peptide.name}</strong>
     <div>Molecular weight: {peptide.molecularWeight}</div>
     <div>Purity: {peptide.purity}%</div>
@@ -34,7 +34,7 @@ const PeptideAmount = ({ peptide, totalMoles, adjustedAmountOfGel }) => (
     <strong>{peptide.name}</strong>
     <div>
       {calcMass(peptide, totalMoles).toFixed(4)}
-      mg in {Math.round(adjustedAmountOfGel / 2)} μL
+      mg in {(adjustedAmountOfGel / 2).toFixed(1)} μL
     </div>
   </PeptideContainer>
 );
@@ -43,32 +43,65 @@ const Calculated = styled.fieldset`
   color: gray;
 `;
 
+const peg4Npc = {
+  name: "PEG4NPC",
+  molecularWeight: 10275,
+  purity: 89,
+};
+const kdwrk = {
+  name: "KDWRK",
+  molecularWeight: 876.972 * 4,
+  purity: 98,
+};
+const peg4Vs = {
+  name: "PEGVS",
+  molecularWeight: 10275,
+  purity: 99.2,
+};
+const pegAcr = {
+  name: "PEG ACR",
+  molecularWeight: 10275,
+  purity: 99.2,
+};
+
+function getTotalMolecularWeight(aPeptides, bPeptides) {
+  const aTotal = aPeptides
+    .map((peptide) => peptide.molecularWeight)
+    .reduce((prev, cur) => prev + cur, 0);
+
+  const bTotal = bPeptides
+    .map((peptide) => peptide.molecularWeight)
+    .reduce((prev, cur) => prev + cur, 0);
+
+  return aTotal + bTotal;
+}
+
 export const Calc = () => {
   const [amountOfGel, setAmountOfGel] = useState(50);
   const [numberOfGels, setNumberOfGels] = useState(1);
   const [solidContent, setSolidContent] = useState(10);
-  const peg4Npc = {
-    name: "PEG4NPC",
-    molecularWeight: 10275,
-    purity: 89,
-  };
-  const kdwrk = {
-    name: "KDWRK",
-    molecularWeight: 876.972 * 4,
-    purity: 98,
-  };
-  const peg4Vs = {
-    name: "PEGVS",
-    molecularWeight: 10275,
-    purity: 99.2,
-  };
+
+  const aPeptides = [peg4Npc, kdwrk];
+  const [bPeptides, setBPeptides] = useState([peg4Vs]);
+  const [bRatio, setBRatio] = useState(100);
+
+  const adjustedBPeptides = bPeptides.map((b) => ({
+    ...b,
+    molecularWeight:
+      b.name === "PEGVS"
+        ? (b.molecularWeight * bRatio) / 100
+        : (b.molecularWeight * (100 - bRatio)) / 100,
+  }));
 
   const adjustedAmountOfGel = amountOfGel * 1.1;
   const theoreticalSolidContent = adjustedAmountOfGel * (solidContent / 100);
-  const totalMolecularWeight =
-    peg4Npc.molecularWeight + kdwrk.molecularWeight + peg4Vs.molecularWeight;
+  const totalMolecularWeight = getTotalMolecularWeight(
+    aPeptides,
+    adjustedBPeptides,
+  );
 
   const totalMoles = theoreticalSolidContent / totalMolecularWeight;
+
   return (
     <Page>
       <h1>Gel Calc</h1>
@@ -101,12 +134,43 @@ export const Calc = () => {
       <Peptides>
         <div>
           <h2>A</h2>
-          <Peptide peptide={peg4Npc} />
-          <Peptide peptide={kdwrk} />
+          {aPeptides.map((a) => (
+            <Peptide key={a.name} peptide={a} />
+          ))}
         </div>
         <div>
           <h2>B</h2>
-          <Peptide peptide={peg4Vs} />
+          {bPeptides.map((b) => (
+            <Peptide
+              key={b.name}
+              peptide={b}
+              onClick={() =>
+                setBPeptides(bPeptides.filter((p) => p.name !== b.name))
+              }
+            />
+          ))}
+          {bPeptides.length === 1 && (
+            <button
+              onClick={() => {
+                setBPeptides(bPeptides.concat([pegAcr]));
+              }}
+            >
+              Add peptide
+            </button>
+          )}
+          {bPeptides.length > 1 && (
+            <label>
+              {bRatio}
+              <input
+                type="range"
+                min="0"
+                max="100"
+                defaultValue="100"
+                onChange={(e) => setBRatio(e.target.value)}
+              />
+              {100 - bRatio}
+            </label>
+          )}
         </div>
       </Peptides>
 
@@ -114,23 +178,29 @@ export const Calc = () => {
         <legend>Calculated</legend>
         <div>Adjusted volume: {Math.round(adjustedAmountOfGel)}μL</div>
         <div>
-          Theoretical solid content: {theoreticalSolidContent.toFixed(3)}
+          Theoretical solid content: {theoreticalSolidContent.toFixed(3)} mg
         </div>
         <div>Total molecular weight: {totalMolecularWeight}</div>
         <div>Total moles: {totalMolecularWeight} mmol</div>
       </Calculated>
 
       <Peptides>
-        <PeptideAmount
-          peptide={kdwrk}
-          totalMoles={totalMoles}
-          adjustedAmountOfGel={adjustedAmountOfGel}
-        />
-        <PeptideAmount
-          peptide={peg4Vs}
-          totalMoles={totalMoles}
-          adjustedAmountOfGel={adjustedAmountOfGel}
-        />
+        <div>
+          <PeptideAmount
+            peptide={kdwrk}
+            totalMoles={totalMoles}
+            adjustedAmountOfGel={adjustedAmountOfGel}
+          />
+        </div>
+        <div>
+          {adjustedBPeptides.map((b) => (
+            <PeptideAmount
+              peptide={b}
+              totalMoles={totalMoles / bPeptides.length}
+              adjustedAmountOfGel={adjustedAmountOfGel / bPeptides.length}
+            />
+          ))}
+        </div>
       </Peptides>
 
       <div>
@@ -148,16 +218,24 @@ export const Calc = () => {
       </div>
 
       <Peptides>
-        <PeptideAmount
-          peptide={kdwrk}
-          totalMoles={totalMoles * numberOfGels}
-          adjustedAmountOfGel={adjustedAmountOfGel * numberOfGels}
-        />
-        <PeptideAmount
-          peptide={peg4Vs}
-          totalMoles={totalMoles * numberOfGels}
-          adjustedAmountOfGel={adjustedAmountOfGel * numberOfGels}
-        />
+        <div>
+          <PeptideAmount
+            peptide={kdwrk}
+            totalMoles={totalMoles * numberOfGels}
+            adjustedAmountOfGel={adjustedAmountOfGel * numberOfGels}
+          />
+        </div>
+        <div>
+          {adjustedBPeptides.map((b) => (
+            <PeptideAmount
+              peptide={b}
+              totalMoles={(totalMoles / bPeptides.length) * numberOfGels}
+              adjustedAmountOfGel={
+                (adjustedAmountOfGel / bPeptides.length) * numberOfGels
+              }
+            />
+          ))}
+        </div>
       </Peptides>
     </Page>
   );
