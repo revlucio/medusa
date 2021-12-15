@@ -26,6 +26,7 @@ export const NewCalc = () => {
       <div>
         Theoretical solid content: {theoreticalSolidContent.toFixed(3)} mg
       </div>
+      <div>Total molecular weight: 24057.888</div>
     </>
   );
 };
