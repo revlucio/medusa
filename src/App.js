@@ -5,7 +5,8 @@ import { Calc } from "./pages/Calc";
 
 const routes = {
   "/": () => <HomePage />,
-  "/calc": () => <Calc />,
+  "/old-calc": () => <Calc />,
+  // "/calc": () => <NewCalc />,
 };
 
 function App() {
