@@ -5,8 +5,8 @@ import { NewCalc } from "./NewCalc";
 const get = (text) => screen.getByText(text);
 const typeByLabel = (label, text) => type(screen.getByLabelText(label), text);
 
-const renderCalc = () => {
-  render(<NewCalc />);
+const renderCalc = ({ aPolymer, aPeptide } = {}) => {
+  render(<NewCalc aPolymer={aPolymer} aPeptide={aPeptide} />);
   get("Gel calculator");
 };
 
@@ -28,9 +28,16 @@ describe("given <Calc />", () => {
     get("Theoretical solid content: 0.825 mg");
   });
 
-  it("when no polymer is added to B the total molecular weight only includes KDWRK", () => {
-    renderCalc();
+  it("when no polymer is added to B the total molecular weight only A", () => {
+    renderCalc({
+      aPolymer: { weight: 1000, purity: 100 },
+      aPeptide: { weight: 100, purity: 50 },
+    });
 
-    get("Total molecular weight: 24057.888");
+    get("Molecular weight: 1000");
+    get("Purity: 100%");
+    get("Molecular weight: 100");
+    get("Purity: 50%");
+    get("Total molecular weight: 1400");
   });
 });
