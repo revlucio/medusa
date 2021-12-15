@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { type } from "@testing-library/user-event/dist/type";
 import { NewCalc } from "./NewCalc";
+import { click } from "@testing-library/user-event/dist/click";
 
 const get = (text) => screen.getByText(text);
 const typeByLabel = (label, text) => type(screen.getByLabelText(label), text);
@@ -39,5 +40,32 @@ describe("given <Calc />", () => {
     get("Molecular weight: 100");
     get("Purity: 50%");
     get("Total molecular weight: 1400");
+  });
+
+  it("when adding a polymer the amount and volume of peptide is calculated", () => {
+    renderCalc({
+      aPolymer: { weight: 1000, purity: 100 },
+      aPeptide: { weight: 100, purity: 50 },
+    });
+
+    typeByLabel("Amount per gel (μL)", "30");
+    typeByLabel("Solid content (%)", "100");
+    click(get("Add PEG 600"));
+
+    get("18.857 mg in 16.5 μL");
+  });
+
+  it("when adding a polymer the amount and volume of polymer is calculated", () => {
+    renderCalc({
+      aPolymer: { weight: 1000, purity: 100 },
+      aPeptide: { weight: 100, purity: 50 },
+    });
+
+    typeByLabel("Amount per gel (μL)", "30");
+    typeByLabel("Solid content (%)", "100");
+    click(get("Add PEG 600"));
+
+    get("Molecular weight: 600");
+    get("14.143 mg in 16.5 μL");
   });
 });
