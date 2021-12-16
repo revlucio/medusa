@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+const calcMass = (compound, totalMoles) =>
+  (compound.weight / compound.purity) * 100 * totalMoles;
+
 export const NewCalc = ({ aPolymer, aPeptide }) => {
   const [gelAmount, setGelAmount] = useState();
   const [solidContent, setSolidContent] = useState();
@@ -12,13 +15,6 @@ export const NewCalc = ({ aPolymer, aPeptide }) => {
   const theoreticalSolidContent = (adjustedVolume * solidContent) / 100;
   const totalMolecularWeight = polymer.weight + peptide.weight * 4;
   const totalMoles = theoreticalSolidContent / totalMolecularWeight;
-
-  const peptideMass =
-    ((peptide.weight * 4) / peptide.purity) * 100 * totalMoles;
-
-  const polymerMass = bPolymer
-    ? (bPolymer.weight / bPolymer.purity) * 100 * totalMoles
-    : 0;
 
   return (
     <>
@@ -61,12 +57,21 @@ export const NewCalc = ({ aPolymer, aPeptide }) => {
       </div>
       <div>Total molecular weight: {totalMolecularWeight}</div>
 
-      <div>
-        {peptideMass.toFixed(3)} mg in {adjustedVolume / 2} μL
-      </div>
-      <div>
-        {polymerMass.toFixed(3)} mg in {adjustedVolume / 2} μL
-      </div>
+      {bPolymer && (
+        <div>
+          <div>
+            {calcMass(
+              { weight: peptide.weight * 4, purity: peptide.purity },
+              totalMoles,
+            ).toFixed(3)}{" "}
+            mg in {adjustedVolume / 2} μL
+          </div>
+          <div>
+            {calcMass(bPolymer, totalMoles).toFixed(3)} mg in{" "}
+            {adjustedVolume / 2} μL
+          </div>
+        </div>
+      )}
     </>
   );
 };
